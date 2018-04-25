@@ -1,45 +1,15 @@
+const express = require('express');
 
-var express = require('express');
+const app = express();
+const server = app.listen(process.env.PORT);
 
-var app = express();
-var server = app.listen(process.env.PORT);
+const socket = require('socket.io');
 
-//app.use(express.static('public'));
+const io = socket(server);
 
-console.log('Server is running');
-
-var socket = require('socket.io');
-
-var io = socket(server);
-
-var online = 0;
+const newConnection = socket => {
+  socket.on('send', data => socket.broadcast.emit('receive', data));
+  socket.on('namechange', message => io.sockets.emit('namechanged', message));
+}
 
 io.sockets.on('connection', newConnection);
-
-function newConnection(socket) {
-  online++;
-  console.log('newConnection ' + socket.id);
-  console.log(online + " persons are online");
-  socket.emit('here', online);
-  socket.on('send', sendMsg);
-  socket.on('somethinghapenswithaname', somethinghapenswithanameMsg);
-
-  function sendMsg(data) {
-    socket.broadcast.emit('receive', data);
-    console.log(data);
-  }
-
-  function somethinghapenswithanameMsg(newname) {
-    io.sockets.emit('somethinghapenswithaname', newname);
-    console.log(newname);
-  }
-
-  socket.on('disconnect', newDisconnection);
-
-  function newDisconnection() {
-    online--;
-     console.log(socket.id + ' Got disconnect!');
-     console.log(online + " persons are online");
-     socket.emit('here', online);
-  }
-}
